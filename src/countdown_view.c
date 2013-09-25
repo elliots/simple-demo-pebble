@@ -23,6 +23,7 @@ static char countdown_string[COUNTDOWN_STRING_LENGTH] = "";
 // Define the various user interface elements comprising this view.
 
 static TextLayer countdown_text_layer;
+static TextLayer prompt_text_layer;
 static ActionBarLayer action_bar;
 
 // Define a structure to hold the window's bitmaps in a convenient aggregate.
@@ -42,6 +43,29 @@ static WindowHandler previous_unload_handler;
 static void load_and_add_view(Window* window, ClickConfigProvider provider);
 static void remove_and_unload_view(Window* window);
 
+void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
+  text_layer_set_text(&countdown_text_layer, "The curling iron is now off.");
+  text_layer_set_text(&prompt_text_layer, "");
+
+  vibes_long_pulse();
+}
+
+void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
+  text_layer_set_text(&countdown_text_layer, "Ignoring...");
+  text_layer_set_text(&prompt_text_layer, "");
+
+  vibes_long_pulse();
+}
+
+void click_config_provider(ClickConfig **config, Window *window) {
+
+  config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
+  config[BUTTON_ID_UP]->click.repeat_interval_ms = 100;
+
+  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
+  config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 100;
+}
+
 // Public functions -----------------------------------------------------------
 
 void countdown_view_init(Window* window, ClickConfigProvider provider) {
@@ -58,7 +82,7 @@ void countdown_view_set_time_remaining_sec(unsigned int seconds) {
 
   snprintf(countdown_string, COUNTDOWN_STRING_LENGTH, COUNTDOWN_STRING_FORMAT,
            minutes_left, seconds_left);
-  text_layer_set_text(&countdown_text_layer, countdown_string);
+  //text_layer_set_text(&countdown_text_layer, countdown_string);
 }
 
 void countdown_view_show_start() {
@@ -76,21 +100,38 @@ void countdown_view_show_abort() {
 // Private functions ----------------------------------------------------------
 
 void load_and_add_view(Window* window, ClickConfigProvider provider) {
+  light_enable_interaction();
+  vibes_long_pulse();
   heap_bitmap_init(&icons.start, RESOURCE_ID_ICON_START);
   heap_bitmap_init(&icons.restart, RESOURCE_ID_ICON_RESTART);
   heap_bitmap_init(&icons.abort, RESOURCE_ID_ICON_ABORT);
 
   action_bar_layer_init(&action_bar);
-  action_bar_layer_set_icon(&action_bar, BUTTON_ID_SELECT, &icons.start.bmp);
+   // action_bar_layer_set_icon(&action_bar, BUTTON_ID_SELECT, &icons.start.bmp);
+  action_bar_layer_set_icon(&action_bar, BUTTON_ID_UP, &icons.restart.bmp);
+  action_bar_layer_set_icon(&action_bar, BUTTON_ID_DOWN, &icons.abort.bmp);
   action_bar_layer_add_to_window(&action_bar, window);
-  action_bar_layer_set_click_config_provider(&action_bar, provider);
+
+
+  window_set_click_config_provider(window, (ClickConfigProvider) click_config_provider);
 
   // TBD: Is there a nicer way to do this? - JRS 8/16
-  text_layer_init(&countdown_text_layer, GRect(0, 20,
-    window->layer.frame.size.w - ACTION_BAR_WIDTH, 55));
+  text_layer_init(&countdown_text_layer, GRect(0, 40, window->layer.frame.size.w - ACTION_BAR_WIDTH, 45));
   text_layer_set_text_alignment(&countdown_text_layer, GTextAlignmentCenter);
-  text_layer_set_font(&countdown_text_layer,
-    fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT));
+  text_layer_set_font(&countdown_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text_color(&countdown_text_layer, GColorWhite);
+  text_layer_set_background_color(&countdown_text_layer, GColorBlack);
+  text_layer_set_overflow_mode(&countdown_text_layer, GTextOverflowModeWordWrap);
+
+  text_layer_set_text(&countdown_text_layer, "You've left your curling iron on.");
+
+  text_layer_init(&prompt_text_layer, GRect(5, 95, window->layer.frame.size.w - ACTION_BAR_WIDTH - 5, 45));
+  text_layer_set_text_alignment(&prompt_text_layer, GTextAlignmentCenter);
+  text_layer_set_font(&prompt_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_overflow_mode(&prompt_text_layer, GTextOverflowModeWordWrap);
+  text_layer_set_text(&prompt_text_layer, "Would you like to turn it off?");
+
+  layer_add_child(&window->layer, &prompt_text_layer.layer);
   layer_add_child(&window->layer, &countdown_text_layer.layer);
 }
 

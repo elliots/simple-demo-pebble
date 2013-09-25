@@ -35,7 +35,7 @@ void segment_view_init(Window* window) {
 void segment_view_show_segment_type(PomodoroSegmentType type) {
   // TBD: Make this a lookup table - JRS 8/30
   if (type == POMODORO_SEGMENT_TYPE_POMODORO) {
-    text_layer_set_text(&segment_type_text_layer, "pomodoro");
+    text_layer_set_text(&segment_type_text_layer, "simple");
   } else if (type == POMODORO_SEGMENT_TYPE_BREAK) {
     text_layer_set_text(&segment_type_text_layer, "break");
   }
@@ -45,7 +45,7 @@ void segment_view_show_segment_type(PomodoroSegmentType type) {
 
 void load_and_add_view(Window* window) {
   // TBD: Is there a nicer way to do this? - JRS 8/16
-  text_layer_init(&segment_type_text_layer, GRect(0, 90,
+  text_layer_init(&segment_type_text_layer, GRect(0, 0,
     window->layer.frame.size.w - ACTION_BAR_WIDTH, 40));
   text_layer_set_text_alignment(&segment_type_text_layer, GTextAlignmentCenter);
   text_layer_set_font(&segment_type_text_layer,
